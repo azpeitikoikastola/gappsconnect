@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from apiclient import errors
+from google_apps import AppsConnect
 
 
 class File(object):
 
-    # TODO check that fields exist and if they are of the correct type of data
-    def __init__(self, *args, **kwargs):
+    def fields_from_dict(self, *args, **kwargs):
         if args and kwargs:
             raise Warning('Use keyword args or a dict not both at the same '
                           'time.')
@@ -16,6 +16,13 @@ class File(object):
             for key, val in kwargs:
                 self.key = val
 
+    # TODO check that fields exist and if they are of the correct type of data
+    def __init__(self, ac, *args, **kwargs):
+        if not(ac and isinstance(ac, AppsConnect)):
+            raise Warning('Not correct initialization')
+        self.ac = ac
+        self.fields_from_dict(args, kwargs)
+
     @classmethod
     def _callback(cls, request_id, response, exception):
         if exception:
@@ -24,9 +31,9 @@ class File(object):
         else:
             print "Permission Id: %s" % response.get('id')
 
-    @classmethod
-    def _create(cls, data):
-        return File(data)
+    def _create(self, data):
+        self.fields_from_dict(data)
+        return self
 
     @classmethod
     def create(cls, ac, data):

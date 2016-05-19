@@ -3,6 +3,21 @@ from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 import httplib2
 
+from file import File
+
+
+class AppsObject(object):
+    def __init__(self, api_key=None, scopes=None, delegation_email=None,
+                 service_name=None, service_version=None):
+        self.ac = AppsConnect(api_key=api_key,
+                              scopes=scopes,
+                              delegation_email=delegation_email,
+                              service_name=service_name,
+                              service_version=service_version)
+
+    def file(self):
+        return File(self.ac)
+
 
 class AppsConnect(object):
 
@@ -34,6 +49,10 @@ class AppsConnect(object):
         http = httplib2.Http()
         http = delegated_credentials.authorize(http)
         self.service = build(service_name, service_version, http=http)
+
+    def file(self):
+        return File(self.ac)
+
 
 # Singleton#########################
 

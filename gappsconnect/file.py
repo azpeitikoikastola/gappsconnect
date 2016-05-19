@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from apiclient import errors
-from google_apps import AppsConnect
 
 
 class File(object):
@@ -9,19 +8,18 @@ class File(object):
         if args and kwargs:
             raise Warning('Use keyword args or a dict not both at the same '
                           'time.')
-        elif args:
-            for key, val in args:
-                self.key = val
-        elif kwargs:
-            for key, val in kwargs:
-                self.key = val
+        if args:
+            for d in args:
+                for k, v in d.iteritems():
+                    setattr(self, k, v)
+        if kwargs:
+            for key, val in kwargs.iteritems():
+                setattr(self, key, val)
 
     # TODO check that fields exist and if they are of the correct type of data
     def __init__(self, ac, *args, **kwargs):
-        if not(ac and isinstance(ac, AppsConnect)):
-            raise Warning('Not correct initialization')
         self.ac = ac
-        self.fields_from_dict(args, kwargs)
+        self.fields_from_dict(*args, **kwargs)
 
     @classmethod
     def _callback(cls, request_id, response, exception):
@@ -33,29 +31,28 @@ class File(object):
 
     def _create(self, data):
         self.fields_from_dict(data)
-        return self
+        print self.__dict__
+        return self.id
 
-    @classmethod
-    def create(cls, ac, data):
+    def create(self, data):
         try:
-            new_file = ac.service.groups().create(
+            new_file = self.ac.service.files().create(
                 body=data, fields='id').execute()
-            return File._create(new_file)
+            return self._create(new_file)
         except errors.HttpError as error:
             print 'An error occurred: %s' % error
 
-    @classmethod
-    def change_owner(cls, ac, g_file, email, callback=None):
+    def change_owner(self, g_file, email, callback=None):
             if isinstance(g_file, File):
                 file_id = g_file.id
             else:
                 file_id = g_file
-            batch = ac.service.new_batch_http_request(
-                callback=callback or cls._callback())
+            batch = self.ac.service.new_batch_http_request(
+                callback=callback or self._callback)
             user_permission = {'type': 'user', 'role': 'owner',
                                'emailAddress': email}
             batch.add(
-                ac.service.permissions().create(
+                self.ac.service.permissions().create(
                     fileId=file_id,
                     body=user_permission,
                     fields='id',

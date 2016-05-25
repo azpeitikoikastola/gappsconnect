@@ -32,13 +32,12 @@ class File(object):
     def _create(self, data):
         self.fields_from_dict(data)
         print self.__dict__
-        return self.id
 
     def create(self, data):
         try:
             new_file = self.ac.service.files().create(
                 body=data, fields='id').execute()
-            return self._create(new_file)
+            return new_file['id']
         except errors.HttpError as error:
             print 'An error occurred: %s' % error
 
@@ -59,14 +58,31 @@ class File(object):
                     transferOwnership=True))
             batch.execute()
 
-    @classmethod
-    def get(cls, ac, key):
+    def get(self, key):
         try:
-            g_file = ac.service.groups().get(
+            g_file = self.ac.service.files().get(
                 fileId=key).execute()
-            return File._create(g_file)
+            print g_file
+            return self._create(g_file)
         except errors.HttpError as error:
-            print 'An error occurred getting group: %s' % error
+            print 'An error occurred getting file: %s' % error
+
+    def list(self, corpus=None, order_by=None, page_size=100, page_token=None,
+             q=None, spaces=None):
+        next_token = True
+        while next_token:
+            next_token = page_token
+            try:
+                g_file = self.ac.service.files().list(corpus=corpus,
+                                                      orderBy=order_by,
+                                                      pageSize=page_size,
+                                                      pageToken=next_token,
+                                                      q=q, spaces=spaces
+                                                      ).execute()
+                next_token = g_file.get('nextPageToken')
+                print g_file
+            except errors.HttpError as error:
+                print 'An error occurred getting file: %s' % error
 # {
 #   "kind": "drive#file",
 #   "id": string,
